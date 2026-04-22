@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use reqwest::{header::HeaderMap, Method};
 use serde::de::DeserializeOwned;
-use url::Url;
 use crate::{
     api::api_client::ApiClient,
     error::{OpenFgaError, Result},
