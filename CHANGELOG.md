@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial release of the OpenFGA Rust SDK
-- `OpenFgaClient` — high-level async client covering all 20 OpenFGA API endpoints
+- `OpenFgaClient` - high-level async client covering all 20 OpenFGA API endpoints
 - Three authentication modes: None, API Token, OAuth2 Client Credentials (with thread-safe token caching)
 - Automatic retry with exponential backoff and `Retry-After` / `X-RateLimit-Reset` header support
 - Non-transaction write chunking (configurable chunk size, parallel execution)

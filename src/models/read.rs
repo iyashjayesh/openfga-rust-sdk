@@ -20,7 +20,7 @@ pub struct ReadRequest {
     /// Authorization model ID.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub authorization_model_id: Option<String>,
-    /// Pagination — maximum number of results to return.
+    /// Pagination - maximum number of results to return.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub page_size: Option<i32>,
     /// Pagination continuation token.

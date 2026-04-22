@@ -1,4 +1,4 @@
-//! Expand-related models — userset tree types.
+//! Expand-related models - userset tree types.
 
 use serde::{Deserialize, Serialize};
 
@@ -68,7 +68,7 @@ pub struct Nodes {
     pub nodes: Vec<Node>,
 }
 
-/// A leaf node in a userset tree — contains actual users.
+/// A leaf node in a userset tree - contains actual users.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Leaf {
     /// Direct users.

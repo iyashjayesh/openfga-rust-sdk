@@ -78,7 +78,7 @@ impl OpenFgaError {
         match self {
             Self::RateLimitExceeded(e) => e.should_retry(),
             Self::Internal(e) => e.should_retry(),
-            // Network-level errors stored as strings — always retry.
+            // Network-level errors stored as strings - always retry.
             Self::Http(_) => true,
             _ => false,
         }
@@ -312,7 +312,7 @@ pub fn new(ctx: ApiErrorContext) -> Self {
         }
     }
 
-    /// Always returns `true` — 429 errors are always retryable.
+    /// Always returns `true` - 429 errors are always retryable.
     pub fn should_retry(&self) -> bool {
         true
     }

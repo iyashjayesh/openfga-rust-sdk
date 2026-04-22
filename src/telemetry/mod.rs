@@ -1,4 +1,4 @@
-//! OpenTelemetry telemetry — mirrors `telemetry/` from the Go SDK.
+//! OpenTelemetry telemetry - mirrors `telemetry/` from the Go SDK.
 //!
 //! Telemetry is optional and gated behind the `opentelemetry` feature flag.
 
@@ -63,11 +63,11 @@ impl Default for MetricsConfiguration {
                 "http.request.method".to_string(),
                 "http.response.status_code".to_string(),
                 "user_agent.original".to_string(),
-                "fga_client.request.client_id".to_string(),
-                "fga_client.request.method".to_string(),
-                "fga_client.request.model_id".to_string(),
-                "fga_client.request.store_id".to_string(),
-                "fga_client.response.model_id".to_string(),
+                "fga-client.request.client_id".to_string(),
+                "fga-client.request.method".to_string(),
+                "fga-client.request.model_id".to_string(),
+                "fga-client.request.store_id".to_string(),
+                "fga-client.response.model_id".to_string(),
             ],
         }
     }
@@ -85,6 +85,8 @@ pub mod attributes {
     pub const HTTP_REQUEST_METHOD: &str = "http.request.method";
     /// The HTTP response status code.
     pub const HTTP_RESPONSE_STATUS_CODE: &str = "http.response.status_code";
+    /// The number of times the request was retried.
+    pub const HTTP_REQUEST_RESEND_COUNT: &str = "http.request.resend_count";
     /// The full request URL.
     pub const URL_FULL: &str = "url.full";
     /// The URL scheme (http, https).
@@ -92,17 +94,17 @@ pub mod attributes {
     /// The user agent string.
     pub const USER_AGENT_ORIGINAL: &str = "user_agent.original";
     /// The client ID used for the request.
-    pub const FGA_CLIENT_REQUEST_CLIENT_ID: &str = "fga_client.request.client_id";
+    pub const FGA_CLIENT_REQUEST_CLIENT_ID: &str = "fga-client.request.client_id";
     /// The FGA operation name (e.g. Check).
-    pub const FGA_CLIENT_REQUEST_METHOD: &str = "fga_client.request.method";
+    pub const FGA_CLIENT_REQUEST_METHOD: &str = "fga-client.request.method";
     /// The authorization model ID from the request.
-    pub const FGA_CLIENT_REQUEST_MODEL_ID: &str = "fga_client.request.model_id";
+    pub const FGA_CLIENT_REQUEST_MODEL_ID: &str = "fga-client.request.model_id";
     /// The store ID from the request.
-    pub const FGA_CLIENT_REQUEST_STORE_ID: &str = "fga_client.request.store_id";
+    pub const FGA_CLIENT_REQUEST_STORE_ID: &str = "fga-client.request.store_id";
     /// The authorization model ID from the response.
-    pub const FGA_CLIENT_RESPONSE_MODEL_ID: &str = "fga_client.response.model_id";
+    pub const FGA_CLIENT_RESPONSE_MODEL_ID: &str = "fga-client.response.model_id";
     /// High-cardinality user ID (disabled by default).
-    pub const FGA_CLIENT_USER: &str = "fga_client.user";
+    pub const FGA_CLIENT_USER: &str = "fga-client.user";
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -112,15 +114,15 @@ pub mod attributes {
 /// Metric name constants.
 pub mod metrics {
     /// Total SDK request duration (including retries).
-    pub const REQUEST_DURATION: &str = "fga_client.request.duration";
+    pub const REQUEST_DURATION: &str = "fga-client.request.duration";
     /// Server-side processing time.
-    pub const QUERY_DURATION: &str = "fga_client.query.duration";
+    pub const QUERY_DURATION: &str = "fga-client.query.duration";
     /// Total number of SDK requests.
-    pub const REQUEST_COUNT: &str = "fga_client.request.count";
+    pub const REQUEST_COUNT: &str = "fga-client.request.count";
     /// Number of credential refresh requests.
-    pub const CREDENTIALS_REQUEST: &str = "fga_client.credentials.request";
+    pub const CREDENTIALS_REQUEST: &str = "fga-client.credentials.request";
     /// HTTP round-trip duration.
-    pub const HTTP_REQUEST_DURATION: &str = "http.client.request.duration";
+    pub const HTTP_REQUEST_DURATION: &str = "fga-client.http_request.duration";
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -130,6 +132,7 @@ pub mod metrics {
 /// Recorder that emits OpenTelemetry metrics if the feature is enabled.
 #[derive(Debug, Clone, Default)]
 pub struct FgaTelemetry {
+    #[allow(dead_code)]
     pub(crate) config: TelemetryConfiguration,
     #[cfg(feature = "opentelemetry")]
     pub(crate) instruments: Option<Instruments>,
@@ -213,12 +216,12 @@ impl Instruments {
             request_duration: meter
                 .f64_histogram(metrics::REQUEST_DURATION)
                 .with_description("Total SDK request duration")
-                .with_unit("ms")
+                .with_unit("milliseconds")
                 .build(),
             query_duration: meter
                 .f64_histogram(metrics::QUERY_DURATION)
                 .with_description("Server-side query duration")
-                .with_unit("ms")
+                .with_unit("milliseconds")
                 .build(),
             request_count: meter
                 .u64_counter(metrics::REQUEST_COUNT)
@@ -227,7 +230,7 @@ impl Instruments {
             http_request_duration: meter
                 .f64_histogram(metrics::HTTP_REQUEST_DURATION)
                 .with_description("HTTP round-trip duration")
-                .with_unit("ms")
+                .with_unit("milliseconds")
                 .build(),
         }
     }

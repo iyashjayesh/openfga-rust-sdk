@@ -61,7 +61,7 @@ mod ulid_tests {
 
     #[test]
     fn empty_store_id_is_allowed() {
-        // Empty string means "no default store_id" — allowed at construction time.
+        // Empty string means "no default store_id" - allowed at construction time.
         let result = OpenFgaClient::new(&ClientConfiguration {
             api_url: "http://localhost:8080".to_string(),
             store_id: Some(String::new()),

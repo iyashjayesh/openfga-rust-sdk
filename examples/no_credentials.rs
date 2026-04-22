@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set the new store as active.
     client.set_store_id(&store.id).await?;
 
-    // Check a permission (will return false — no tuples written yet).
+    // Check a permission (will return false - no tuples written yet).
     let resp = client
         .check(
             CheckRequest::new(CheckRequestTupleKey::new(

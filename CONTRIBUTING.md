@@ -40,7 +40,7 @@ src/
 ├── api/
 │   ├── configuration.rs    # Configuration struct + validation
 │   ├── api_client.rs       # Low-level reqwest wrapper
-│   └── executor.rs         # ApiExecutorImpl — retry + decode
+│   └── executor.rs         # ApiExecutorImpl - retry + decode
 ├── credentials/
 │   └── mod.rs              # Credentials: None / ApiToken / ClientCredentials
 ├── oauth2/
@@ -74,14 +74,14 @@ examples/
 
 This SDK must maintain **behavioural consistency** with the Go SDK:
 
-1. **Retry behaviour** — same defaults: `max_retry = 3`, `min_wait_ms = 100`.
+1. **Retry behaviour** - same defaults: `max_retry = 3`, `min_wait_ms = 100`.
    Respect `Retry-After` and `X-RateLimit-Reset` headers.
-2. **Error variants** — every API error carries `store_id`, `endpoint`, HTTP
+2. **Error variants** - every API error carries `store_id`, `endpoint`, HTTP
    status, request-id, and raw body bytes.
-3. **ULID validation** — store IDs and model IDs are validated before being
+3. **ULID validation** - store IDs and model IDs are validated before being
    sent to the API.
-4. **Non-transaction writes** — chunked at 100 tuples per chunk by default.
-5. **User-Agent** — `openfga-sdk rust/<version>`.
+4. **Non-transaction writes** - chunked at 100 tuples per chunk by default.
+5. **User-Agent** - `openfga-sdk rust/<version>`.
 
 ## Adding a New API Endpoint
 
@@ -111,9 +111,9 @@ default** and must be explicitly enabled in `MetricsConfiguration`.
 
 ## Pull Request Checklist
 
-- [ ] `cargo fmt --all` — no formatting changes
-- [ ] `cargo clippy --all-features -- -D warnings` — no new warnings
-- [ ] `cargo test --all-features` — all tests pass
+- [ ] `cargo fmt --all` - no formatting changes
+- [ ] `cargo clippy --all-features -- -D warnings` - no new warnings
+- [ ] `cargo test --all-features` - all tests pass
 - [ ] New public types/methods have doc comments
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] Consistent with Go SDK behaviour (retry, errors, user-agent)

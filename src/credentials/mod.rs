@@ -1,4 +1,4 @@
-//! Credentials — mirrors `credentials/credentials.go`.
+//! Credentials - mirrors `credentials/credentials.go`.
 
 use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};

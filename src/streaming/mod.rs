@@ -23,9 +23,9 @@ use crate::{
 
 /// Tries to extract and decode the next complete newline-terminated JSON line
 /// from `buf`.  Returns:
-/// - `Some(Ok(item))` — a complete, valid line was decoded.
-/// - `Some(Err(e))` — a complete line was found but could not be decoded.
-/// - `None` — no complete line is available yet.
+/// - `Some(Ok(item))` - a complete, valid line was decoded.
+/// - `Some(Err(e))` - a complete line was found but could not be decoded.
+/// - `None` - no complete line is available yet.
 fn try_next_line(buf: &mut BytesMut) -> Option<Result<StreamedListObjectsResponse>> {
     let newline_pos = buf.iter().position(|&b| b == b'\n')?;
     let line_bytes = buf.split_to(newline_pos + 1);

@@ -1,4 +1,4 @@
-//! High-level OpenFGA client — mirrors `client/client.go`.
+//! High-level OpenFGA client - mirrors `client/client.go`.
 //!
 //! [`OpenFgaClient`] is the recommended entry point for users. It wraps the
 //! lower-level [`ApiClient`] and [`ApiExecutor`] with:
@@ -742,7 +742,7 @@ impl OpenFgaClient {
         Ok(resp)
     }
 
-    /// Client-side batch check — runs multiple `check` calls in parallel.
+    /// Client-side batch check - runs multiple `check` calls in parallel.
     ///
     /// Suitable for FGA < 1.8.0 where server-side `BatchCheck` is unavailable.
     /// Errors on individual checks set `allowed = false` and attach the error.

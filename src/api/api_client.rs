@@ -1,4 +1,4 @@
-//! Low-level API client — mirrors `api_client.go`.
+//! Low-level API client - mirrors `api_client.go`.
 
 
 use reqwest::{
@@ -25,6 +25,7 @@ use super::configuration::Configuration;
 pub struct ApiClient {
     pub(crate) cfg: Configuration,
     pub(crate) http: Client,
+    #[allow(dead_code)]
     pub(crate) telemetry: crate::telemetry::FgaTelemetry,
 }
 
@@ -61,6 +62,7 @@ impl ApiClient {
     }
 
     /// Returns the `Configuration` used by this client.
+    #[allow(dead_code)]
     pub fn config(&self) -> &Configuration {
         &self.cfg
     }

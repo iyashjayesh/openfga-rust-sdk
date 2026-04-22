@@ -1,4 +1,4 @@
-//! SDK configuration — mirrors `configuration.go`.
+//! SDK configuration - mirrors `configuration.go`.
 
 use std::collections::HashMap;
 
@@ -31,7 +31,7 @@ pub struct Configuration {
     pub user_agent: String,
     /// If `true`, log request/response details to stderr.
     pub debug: bool,
-    /// Custom `reqwest::Client` (optional — one is created automatically).
+    /// Custom `reqwest::Client` (optional - one is created automatically).
     pub http_client: Option<Client>,
     /// Retry configuration.
     pub retry_params: Option<RetryParams>,
@@ -112,11 +112,13 @@ impl Configuration {
     }
 
     /// Adds a default header to be sent with all requests.
+    #[allow(dead_code)]
     pub fn add_default_header(&mut self, key: impl Into<String>, value: impl Into<String>) {
         self.default_headers.insert(key.into(), value.into());
     }
 
     /// Returns the SDK version string.
+    #[allow(dead_code)]
     pub fn sdk_version() -> &'static str {
         SDK_VERSION
     }

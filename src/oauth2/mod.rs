@@ -1,4 +1,4 @@
-//! OAuth2 Client Credentials flow — mirrors `oauth2/` from the Go SDK.
+//! OAuth2 Client Credentials flow - mirrors `oauth2/` from the Go SDK.
 
 use std::{
     sync::Arc,
@@ -75,7 +75,7 @@ pub struct ClientCredentialsParams {
 
 /// Fetches and caches OAuth2 client credential access tokens.
 ///
-/// Thread-safe — can be cloned and shared across tasks.
+/// Thread-safe - can be cloned and shared across tasks.
 #[derive(Debug, Clone)]
 pub struct ClientCredentialsProvider {
     params: ClientCredentialsParams,

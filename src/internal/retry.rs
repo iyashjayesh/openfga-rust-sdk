@@ -1,4 +1,4 @@
-//! Retry utilities — mirrors `internal/utils/retryutils/`.
+//! Retry utilities - mirrors `internal/utils/retryutils/`.
 
 use std::time::Duration;
 

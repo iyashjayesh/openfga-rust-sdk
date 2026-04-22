@@ -1,4 +1,4 @@
-//! `ApiExecutor` — retry-and-telemetry wrapper around `ApiClient`.
+//! `ApiExecutor` - retry-and-telemetry wrapper around `ApiClient`.
 //!
 //! Mirrors `api_executor.go` from the Go SDK.
 
@@ -7,7 +7,9 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use reqwest::{header::HeaderMap, Method};
 use serde::de::DeserializeOwned;
+use url::Url;
 use crate::{
+    api::api_client::ApiClient,
     error::{OpenFgaError, Result},
     internal::retry::RetryParams,
 };
@@ -15,12 +17,13 @@ use crate::{
 #[cfg(feature = "opentelemetry")]
 use crate::telemetry::attributes;
 
-use tokio::time::{sleep, Instant};
+use tokio::time::sleep;
+#[cfg(feature = "opentelemetry")]
+use tokio::time::Instant;
 
 #[cfg(feature = "opentelemetry")]
 use opentelemetry::KeyValue;
 
-use super::api_client::ApiClient;
 
 // ────────────────────────────────────────────────────────────────────────────
 // ApiExecutorRequest / Response
@@ -59,12 +62,14 @@ impl ApiExecutorRequest {
     }
 
     /// Sets the JSON body.
+    #[allow(dead_code)]
     pub fn with_body(mut self, body: serde_json::Value) -> Self {
         self.body = Some(body);
         self
     }
 
     /// Adds a custom header.
+    #[allow(dead_code)]
     pub fn with_header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.headers.insert(key.into(), value.into());
         self
@@ -104,8 +109,10 @@ impl ApiExecutorRequest {
 #[derive(Debug)]
 pub struct ApiExecutorResponse {
     /// HTTP status code.
+    #[allow(dead_code)]
     pub status_code: u16,
     /// Response headers.
+    #[allow(dead_code)]
     pub headers: reqwest::header::HeaderMap,
     /// Raw response body bytes.
     pub body: bytes::Bytes,
@@ -149,12 +156,33 @@ impl ApiExecutorImpl {
     }
 
     #[cfg(feature = "opentelemetry")]
-    fn get_base_attributes(&self, req: &ApiExecutorRequest, store_id: &str) -> Vec<KeyValue> {
-        vec![
+    fn get_base_attributes(&self, req: &ApiExecutorRequest, store_id: &str, attempt: u32) -> Vec<KeyValue> {
+        let mut attrs = vec![
             KeyValue::new(attributes::FGA_CLIENT_REQUEST_METHOD, req.operation_name.clone()),
             KeyValue::new(attributes::FGA_CLIENT_REQUEST_STORE_ID, store_id.to_string()),
+            KeyValue::new(
+                attributes::HTTP_HOST,
+                Url::parse(&self.client.cfg.api_url)
+                    .map(|u| u.host_str().unwrap_or("").to_string())
+                    .unwrap_or_default(),
+            ),
             KeyValue::new(attributes::HTTP_REQUEST_METHOD, req.method.to_uppercase()),
-        ]
+        ];
+
+        if attempt > 1 {
+            attrs.push(KeyValue::new(attributes::HTTP_REQUEST_RESEND_COUNT, (attempt - 1) as i64));
+        }
+
+
+        if let Some(body) = req.body.as_ref() {
+            if let Some(tuple_key) = body.get("tuple_key") {
+                if let Some(user) = tuple_key.get("user").and_then(|u| u.as_str()) {
+                    attrs.push(KeyValue::new(attributes::FGA_CLIENT_USER, user.to_string()));
+                }
+            }
+        }
+
+        attrs
     }
 
     async fn execute_internal(&self, req: &ApiExecutorRequest) -> Result<ApiExecutorResponse> {
@@ -215,7 +243,7 @@ impl ApiExecutorImpl {
 
                     #[cfg(feature = "opentelemetry")]
                     {
-                        let mut attrs = self.get_base_attributes(req, store_id);
+                        let mut attrs = self.get_base_attributes(req, store_id, attempt + 1);
                         attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status_code as i64));
 
                         self.client.telemetry.record_http_request_duration(http_duration, &attrs);
@@ -225,6 +253,15 @@ impl ApiExecutorImpl {
                                 if let Ok(ms) = ms_str.parse::<f64>() {
                                     self.client.telemetry.record_query_duration(ms, &attrs);
                                 }
+                            }
+                        }
+
+                        if let Some(val) = resp_headers.get("openfga-authorization-model-id") {
+                            if let Ok(model_id) = val.to_str() {
+                                attrs.push(KeyValue::new(
+                                    attributes::FGA_CLIENT_RESPONSE_MODEL_ID,
+                                    model_id.to_string(),
+                                ));
                             }
                         }
 
@@ -246,7 +283,7 @@ impl ApiExecutorImpl {
                 Err(e) => {
                     #[cfg(feature = "opentelemetry")]
                     {
-                        let mut attrs = self.get_base_attributes(req, store_id);
+                        let mut attrs = self.get_base_attributes(req, store_id, attempt + 1);
                         // For errors, status code might be available in context
                         if let Some(status) = e.status_code() {
                             attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status as i64));
@@ -260,7 +297,7 @@ impl ApiExecutorImpl {
                     if !e.should_retry() {
                         #[cfg(feature = "opentelemetry")]
                         {
-                            let mut attrs = self.get_base_attributes(req, store_id);
+                            let mut attrs = self.get_base_attributes(req, store_id, attempt + 1);
                             if let Some(status) = e.status_code() {
                                 attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status as i64));
                             }
@@ -281,7 +318,7 @@ impl ApiExecutorImpl {
 
         #[cfg(feature = "opentelemetry")]
         {
-            let mut attrs = self.get_base_attributes(req, store_id);
+            let mut attrs = self.get_base_attributes(req, store_id, retry.max_retry + 1);
             if let Some(status) = err.status_code() {
                 attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status as i64));
             }

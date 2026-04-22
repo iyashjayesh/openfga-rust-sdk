@@ -21,7 +21,7 @@ pub struct Status {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// StreamResult — envelope for NDJSON streaming responses
+// StreamResult - envelope for NDJSON streaming responses
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Wrapper for each line in a streaming (NDJSON) response.

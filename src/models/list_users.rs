@@ -35,7 +35,7 @@ pub struct FgaObject {
     pub id: String,
 }
 
-/// A user — can be a typed wildcard, a userset user, or a plain object.
+/// A user - can be a typed wildcard, a userset user, or a plain object.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct User {
     /// Typed wildcard.

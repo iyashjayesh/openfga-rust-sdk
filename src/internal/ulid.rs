@@ -1,4 +1,4 @@
-//! ULID validation — mirrors `internal/utils/ulid.go`.
+//! ULID validation - mirrors `internal/utils/ulid.go`.
 
 use ulid::Ulid;
 
@@ -9,7 +9,7 @@ use ulid::Ulid;
 /// # Examples
 ///
 /// ```rust,ignore
-/// // internal module — see unit tests below for validated examples.
+/// // internal module - see unit tests below for validated examples.
 /// assert!(is_well_formed_ulid("01FQH7V8BEG3GPQW93KTRFR8JB"));
 /// assert!(!is_well_formed_ulid("not-a-ulid"));
 /// assert!(!is_well_formed_ulid(""));

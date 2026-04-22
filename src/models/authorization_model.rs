@@ -151,7 +151,7 @@ pub struct Usersets {
     pub child: Vec<Userset>,
 }
 
-/// A userset definition — can be `this`, a union, intersection, difference,
+/// A userset definition - can be `this`, a union, intersection, difference,
 /// a computed userset, or a tuple-to-userset.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Userset {
@@ -188,7 +188,7 @@ pub struct RelationReference {
     /// Optional relation within the type.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub relation: Option<String>,
-    /// Wildcard — represents all users of the type.
+    /// Wildcard - represents all users of the type.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wildcard: Option<TypedWildcard>,
     /// Optional condition name.

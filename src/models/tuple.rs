@@ -23,11 +23,11 @@ pub struct RelationshipCondition {
 /// A relationship tuple key (user + relation + object), optionally with a condition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TupleKey {
-    /// Subject of the relationship — e.g. `"user:anne"`.
+    /// Subject of the relationship - e.g. `"user:anne"`.
     pub user: String,
-    /// Relation name — e.g. `"viewer"`.
+    /// Relation name - e.g. `"viewer"`.
     pub relation: String,
-    /// Object — e.g. `"document:roadmap"`.
+    /// Object - e.g. `"document:roadmap"`.
     pub object: String,
     /// Optional ABAC condition.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -82,7 +82,7 @@ impl TupleKeyWithoutCondition {
 // CheckRequestTupleKey / ReadRequestTupleKey / ExpandRequestTupleKey
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Tuple key used in `CheckRequest` — user and relation are required.
+/// Tuple key used in `CheckRequest` - user and relation are required.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CheckRequestTupleKey {
     /// Subject.
@@ -100,7 +100,7 @@ impl CheckRequestTupleKey {
     }
 }
 
-/// Tuple key used in `ReadRequest` — all fields are optional for filtering.
+/// Tuple key used in `ReadRequest` - all fields are optional for filtering.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ReadRequestTupleKey {
     /// Optional user filter.
