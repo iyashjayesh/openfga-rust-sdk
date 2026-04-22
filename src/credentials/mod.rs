@@ -108,10 +108,22 @@ impl Credentials {
             }
             CredentialsMethod::ClientCredentials => {
                 let required = [
-                    ("client_credentials_client_id", &self.config.client_credentials_client_id),
-                    ("client_credentials_client_secret", &self.config.client_credentials_client_secret),
-                    ("client_credentials_api_token_issuer", &self.config.client_credentials_api_token_issuer),
-                    ("client_credentials_api_audience", &self.config.client_credentials_api_audience),
+                    (
+                        "client_credentials_client_id",
+                        &self.config.client_credentials_client_id,
+                    ),
+                    (
+                        "client_credentials_client_secret",
+                        &self.config.client_credentials_client_secret,
+                    ),
+                    (
+                        "client_credentials_api_token_issuer",
+                        &self.config.client_credentials_api_token_issuer,
+                    ),
+                    (
+                        "client_credentials_api_audience",
+                        &self.config.client_credentials_api_audience,
+                    ),
                 ];
                 for (name, val) in required {
                     if val.as_deref().unwrap_or("").is_empty() {
@@ -130,7 +142,9 @@ impl Credentials {
     /// For `ClientCredentials`, token injection is done via middleware.
     pub fn static_auth_header(&self) -> Option<String> {
         if self.method == CredentialsMethod::ApiToken {
-            self.config.api_token.as_ref()
+            self.config
+                .api_token
+                .as_ref()
                 .map(|t| format!("Bearer {}", t))
         } else {
             None

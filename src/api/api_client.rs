@@ -1,18 +1,14 @@
 //! Low-level API client - mirrors `api_client.go`.
 
-
 use reqwest::{
     header::{HeaderMap, HeaderName, HeaderValue},
     Client, Method, Response,
 };
 use url::Url;
 
-use crate::{
-    error::{
-        ApiErrorContext, FgaApiAuthenticationError, FgaApiError, FgaApiInternalError,
-        FgaApiNotFoundError, FgaApiRateLimitExceededError, FgaApiValidationError, OpenFgaError,
-        Result,
-    },
+use crate::error::{
+    ApiErrorContext, FgaApiAuthenticationError, FgaApiError, FgaApiInternalError,
+    FgaApiNotFoundError, FgaApiRateLimitExceededError, FgaApiValidationError, OpenFgaError, Result,
 };
 
 use super::configuration::Configuration;
@@ -41,10 +37,13 @@ impl ApiClient {
         } else {
             Self::build_http_client(&cfg)?
         };
-        let telemetry = crate::telemetry::FgaTelemetry::new(
-            cfg.telemetry.clone().unwrap_or_default(),
-        );
-        Ok(Self { cfg, http, telemetry })
+        let telemetry =
+            crate::telemetry::FgaTelemetry::new(cfg.telemetry.clone().unwrap_or_default());
+        Ok(Self {
+            cfg,
+            http,
+            telemetry,
+        })
     }
 
     /// Builds a default `reqwest::Client` based on the configuration.
@@ -112,7 +111,10 @@ impl ApiClient {
             req = req.json(&body);
         }
 
-        let resp = req.send().await.map_err(|e| OpenFgaError::Http(e.to_string()))?;
+        let resp = req
+            .send()
+            .await
+            .map_err(|e| OpenFgaError::Http(e.to_string()))?;
 
         if self.cfg.debug {
             eprintln!("[openfga-sdk] <-- {}", resp.status());
@@ -132,13 +134,7 @@ impl ApiClient {
         let body = resp.bytes().await.unwrap_or_default().to_vec();
 
         let ctx = ApiErrorContext::from_response(
-            store_id,
-            endpoint,
-            "UNKNOWN",
-            "",
-            status,
-            &headers,
-            body,
+            store_id, endpoint, "UNKNOWN", "", status, &headers, body,
         );
 
         match status {

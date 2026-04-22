@@ -2,7 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{check::CheckError, consistency::ConsistencyPreference, contextual_tuples::ContextualTupleKeys};
+use super::{
+    check::CheckError, consistency::ConsistencyPreference, contextual_tuples::ContextualTupleKeys,
+};
 
 // ────────────────────────────────────────────────────────────────────────────
 // BatchCheckItem

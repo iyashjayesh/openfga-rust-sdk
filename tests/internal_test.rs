@@ -13,16 +13,16 @@ mod ulid_tests {
 
     #[test]
     fn valid_ulids_accepted() {
-        for id in [
-            "01GXSA8YR785C4FYS3C0RTG7B1",
-            "01FQH7V8BEG3GPQW93KTRFR8JB",
-        ] {
+        for id in ["01GXSA8YR785C4FYS3C0RTG7B1", "01FQH7V8BEG3GPQW93KTRFR8JB"] {
             let result = OpenFgaClient::new(&ClientConfiguration {
                 api_url: "http://localhost:8080".to_string(),
                 store_id: Some(id.to_string()),
                 ..Default::default()
             });
-            assert!(result.is_ok(), "expected {id} to be accepted as a valid ULID");
+            assert!(
+                result.is_ok(),
+                "expected {id} to be accepted as a valid ULID"
+            );
         }
     }
 
@@ -187,7 +187,10 @@ mod serde_tests {
         let req = CheckRequest::new(CheckRequestTupleKey::new("user:bob", "editor", "doc:1"));
         let json: serde_json::Value = serde_json::to_value(&req).unwrap();
         // optional fields should be absent when None
-        assert!(json.get("authorization_model_id").and_then(|v| v.as_str()).is_none());
+        assert!(json
+            .get("authorization_model_id")
+            .and_then(|v| v.as_str())
+            .is_none());
         assert!(json.get("trace").and_then(|v| v.as_bool()).is_none());
     }
 

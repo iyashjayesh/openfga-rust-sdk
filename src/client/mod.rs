@@ -20,19 +20,15 @@ use crate::{
     },
     credentials::Credentials,
     error::{OpenFgaError, Result},
-    internal::{
-        constants::CLIENT_MAX_METHOD_PARALLEL_REQUESTS,
-        ulid::is_well_formed_ulid,
-    },
+    internal::{constants::CLIENT_MAX_METHOD_PARALLEL_REQUESTS, ulid::is_well_formed_ulid},
     models::{
         AuthorizationModel, BatchCheckRequest, BatchCheckResponse, CheckRequest, CheckResponse,
-        ContextualTupleKeys, CreateStoreRequest, CreateStoreResponse,
-        ExpandRequest, ExpandResponse, GetStoreResponse, ListObjectsRequest, ListObjectsResponse,
+        ContextualTupleKeys, CreateStoreRequest, CreateStoreResponse, ExpandRequest,
+        ExpandResponse, GetStoreResponse, ListObjectsRequest, ListObjectsResponse,
         ListStoresResponse, ListUsersRequest, ListUsersResponse, ReadAssertionsResponse,
         ReadAuthorizationModelResponse, ReadAuthorizationModelsResponse, ReadChangesResponse,
-        ReadRequest, ReadResponse, WriteAssertionsRequest,
-        WriteAuthorizationModelRequest, WriteAuthorizationModelResponse, WriteRequest,
-        WriteRequestDeletes, WriteRequestWrites,
+        ReadRequest, ReadResponse, WriteAssertionsRequest, WriteAuthorizationModelRequest,
+        WriteAuthorizationModelResponse, WriteRequest, WriteRequestDeletes, WriteRequestWrites,
     },
 };
 
@@ -284,9 +280,9 @@ impl OpenFgaClient {
     /// Returns the current store ID.
     pub async fn store_id(&self) -> Result<String> {
         let guard = self.store_id.read().await;
-        guard.clone().ok_or_else(|| {
-            OpenFgaError::Configuration("No store_id configured".to_string())
-        })
+        guard
+            .clone()
+            .ok_or_else(|| OpenFgaError::Configuration("No store_id configured".to_string()))
     }
 
     /// Sets the store ID. Must be a valid ULID.
@@ -461,10 +457,9 @@ impl OpenFgaClient {
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadAuthorizationModelResponse> {
         let store_id = self.effective_store_id(opts).await?;
-        let model_id = self
-            .effective_model_id(opts)
-            .await
-            .ok_or_else(|| OpenFgaError::Configuration("No authorization_model_id configured".to_string()))?;
+        let model_id = self.effective_model_id(opts).await.ok_or_else(|| {
+            OpenFgaError::Configuration("No authorization_model_id configured".to_string())
+        })?;
         let req = ApiExecutorRequest {
             operation_name: "ReadAuthorizationModel".to_string(),
             method: "GET".to_string(),
@@ -523,11 +518,7 @@ impl OpenFgaClient {
     ///
     /// In non-transaction mode (`opts.transaction.disable = true`), tuples are split into
     /// chunks and sent in parallel. Each chunk result is tracked individually.
-    pub async fn write(
-        &self,
-        body: WriteRequest,
-        opts: Option<&ClientWriteOptions>,
-    ) -> Result<()> {
+    pub async fn write(&self, body: WriteRequest, opts: Option<&ClientWriteOptions>) -> Result<()> {
         let base_opts = opts.map(|o| &o.base);
         let store_id = self.effective_store_id(base_opts).await?;
         let model_id = self.effective_model_id(base_opts).await;
@@ -539,7 +530,8 @@ impl OpenFgaClient {
 
         if non_tx {
             // Non-transaction mode: chunk and parallelise.
-            self.write_non_transactional(body, &store_id, model_id, opts).await
+            self.write_non_transactional(body, &store_id, model_id, opts)
+                .await
         } else {
             // Single transaction write.
             let req = ApiExecutorRequest {
@@ -752,7 +744,11 @@ impl OpenFgaClient {
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ClientBatchCheckResponse> {
         let _max_parallel = CLIENT_MAX_METHOD_PARALLEL_REQUESTS;
-        let mut handles: Vec<(String, ClientBatchCheckItem, tokio::task::JoinHandle<Result<(ApiExecutorResponse, CheckResponse)>>)> = Vec::with_capacity(items.len());
+        let mut handles: Vec<(
+            String,
+            ClientBatchCheckItem,
+            tokio::task::JoinHandle<Result<(ApiExecutorResponse, CheckResponse)>>,
+        )> = Vec::with_capacity(items.len());
 
         for item in items {
             let executor = self.executor.clone();
@@ -916,9 +912,12 @@ impl OpenFgaClient {
             .map_err(|e| OpenFgaError::Http(e.to_string()))?;
 
         if !resp.status().is_success() {
-            let err =
-                crate::api::api_client::ApiClient::handle_error_response(resp, &store_id, "StreamedListObjects")
-                    .await;
+            let err = crate::api::api_client::ApiClient::handle_error_response(
+                resp,
+                &store_id,
+                "StreamedListObjects",
+            )
+            .await;
             return Err(err);
         }
 
@@ -957,10 +956,9 @@ impl OpenFgaClient {
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadAssertionsResponse> {
         let store_id = self.effective_store_id(opts).await?;
-        let model_id = self
-            .effective_model_id(opts)
-            .await
-            .ok_or_else(|| OpenFgaError::Configuration("No authorization_model_id configured".to_string()))?;
+        let model_id = self.effective_model_id(opts).await.ok_or_else(|| {
+            OpenFgaError::Configuration("No authorization_model_id configured".to_string())
+        })?;
         let req = ApiExecutorRequest {
             operation_name: "ReadAssertions".to_string(),
             method: "GET".to_string(),
@@ -980,10 +978,9 @@ impl OpenFgaClient {
         opts: Option<&ClientRequestOptions>,
     ) -> Result<()> {
         let store_id = self.effective_store_id(opts).await?;
-        let model_id = self
-            .effective_model_id(opts)
-            .await
-            .ok_or_else(|| OpenFgaError::Configuration("No authorization_model_id configured".to_string()))?;
+        let model_id = self.effective_model_id(opts).await.ok_or_else(|| {
+            OpenFgaError::Configuration("No authorization_model_id configured".to_string())
+        })?;
         let req = ApiExecutorRequest {
             operation_name: "WriteAssertions".to_string(),
             method: "PUT".to_string(),
@@ -997,4 +994,3 @@ impl OpenFgaClient {
         Ok(())
     }
 }
-

@@ -52,21 +52,20 @@ async fn test_create_store() {
 
     Mock::given(method("POST"))
         .and(path("/stores"))
-        .respond_with(
-            ResponseTemplate::new(201)
-                .set_body_json(json!({
-                    "id": "01GXSA8YR785C4FYS3C0RTG7B1",
-                    "name": "my-store",
-                    "created_at": "2024-01-01T00:00:00Z",
-                    "updated_at": "2024-01-01T00:00:00Z"
-                })),
-        )
+        .respond_with(ResponseTemplate::new(201).set_body_json(json!({
+            "id": "01GXSA8YR785C4FYS3C0RTG7B1",
+            "name": "my-store",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+        })))
         .mount(&server)
         .await;
 
     let client = client_for(&server).await;
     let resp = client
-        .create_store(CreateStoreRequest { name: "my-store".to_string() })
+        .create_store(CreateStoreRequest {
+            name: "my-store".to_string(),
+        })
         .await
         .expect("create_store should succeed");
 
@@ -80,17 +79,18 @@ async fn test_list_stores() {
 
     Mock::given(method("GET"))
         .and(path("/stores"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_json(json!({
-                "stores": [store_response()],
-                "continuation_token": ""
-            })),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "stores": [store_response()],
+            "continuation_token": ""
+        })))
         .mount(&server)
         .await;
 
     let client = client_for(&server).await;
-    let resp = client.list_stores(None, None).await.expect("list_stores should succeed");
+    let resp = client
+        .list_stores(None, None)
+        .await
+        .expect("list_stores should succeed");
     assert_eq!(resp.stores.len(), 1);
     assert_eq!(resp.stores[0].id, "01GXSA8YR785C4FYS3C0RTG7B1");
 }
@@ -106,7 +106,10 @@ async fn test_get_store() {
         .await;
 
     let client = client_for(&server).await;
-    let resp = client.get_store(None).await.expect("get_store should succeed");
+    let resp = client
+        .get_store(None)
+        .await
+        .expect("get_store should succeed");
     assert_eq!(resp.name, "test-store");
 }
 
@@ -121,7 +124,10 @@ async fn test_delete_store() {
         .await;
 
     let client = client_for(&server).await;
-    client.delete_store(None).await.expect("delete_store should succeed");
+    client
+        .delete_store(None)
+        .await
+        .expect("delete_store should succeed");
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -133,7 +139,9 @@ async fn test_read_authorization_models() {
     let server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/stores/01GXSA8YR785C4FYS3C0RTG7B1/authorization-models"))
+        .and(path(
+            "/stores/01GXSA8YR785C4FYS3C0RTG7B1/authorization-models",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "authorization_models": [{
                 "id": "01GXSA8YR785C4FYS3C0RTG7B2",
@@ -158,7 +166,9 @@ async fn test_read_latest_authorization_model() {
     let server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/stores/01GXSA8YR785C4FYS3C0RTG7B1/authorization-models"))
+        .and(path(
+            "/stores/01GXSA8YR785C4FYS3C0RTG7B1/authorization-models",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "authorization_models": [{
                 "id": "01GXSA8YR785C4FYS3C0RTG7B2",
@@ -243,8 +253,7 @@ async fn test_check_allowed() {
     Mock::given(method("POST"))
         .and(path("/stores/01GXSA8YR785C4FYS3C0RTG7B1/check"))
         .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(json!({ "allowed": true, "resolution": "" })),
+            ResponseTemplate::new(200).set_body_json(json!({ "allowed": true, "resolution": "" })),
         )
         .mount(&server)
         .await;
@@ -272,8 +281,7 @@ async fn test_check_denied() {
     Mock::given(method("POST"))
         .and(path("/stores/01GXSA8YR785C4FYS3C0RTG7B1/check"))
         .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(json!({ "allowed": false, "resolution": "" })),
+            ResponseTemplate::new(200).set_body_json(json!({ "allowed": false, "resolution": "" })),
         )
         .mount(&server)
         .await;
@@ -281,7 +289,11 @@ async fn test_check_denied() {
     let client = client_for(&server).await;
     let resp = client
         .check(
-            CheckRequest::new(CheckRequestTupleKey::new("user:bob", "editor", "document:secret")),
+            CheckRequest::new(CheckRequestTupleKey::new(
+                "user:bob",
+                "editor",
+                "document:secret",
+            )),
             None,
         )
         .await
@@ -296,12 +308,10 @@ async fn test_check_400_returns_validation_error() {
 
     Mock::given(method("POST"))
         .and(path("/stores/01GXSA8YR785C4FYS3C0RTG7B1/check"))
-        .respond_with(
-            ResponseTemplate::new(400).set_body_json(json!({
-                "code": "validation_error",
-                "message": "tuple_key.user is required"
-            })),
-        )
+        .respond_with(ResponseTemplate::new(400).set_body_json(json!({
+            "code": "validation_error",
+            "message": "tuple_key.user is required"
+        })))
         .mount(&server)
         .await;
 

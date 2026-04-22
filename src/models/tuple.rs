@@ -36,7 +36,11 @@ pub struct TupleKey {
 
 impl TupleKey {
     /// Creates a new `TupleKey`.
-    pub fn new(user: impl Into<String>, relation: impl Into<String>, object: impl Into<String>) -> Self {
+    pub fn new(
+        user: impl Into<String>,
+        relation: impl Into<String>,
+        object: impl Into<String>,
+    ) -> Self {
         Self {
             user: user.into(),
             relation: relation.into(),
@@ -69,7 +73,11 @@ pub struct TupleKeyWithoutCondition {
 
 impl TupleKeyWithoutCondition {
     /// Creates a new `TupleKeyWithoutCondition`.
-    pub fn new(user: impl Into<String>, relation: impl Into<String>, object: impl Into<String>) -> Self {
+    pub fn new(
+        user: impl Into<String>,
+        relation: impl Into<String>,
+        object: impl Into<String>,
+    ) -> Self {
         Self {
             user: user.into(),
             relation: relation.into(),
@@ -95,8 +103,16 @@ pub struct CheckRequestTupleKey {
 
 impl CheckRequestTupleKey {
     /// Creates a new `CheckRequestTupleKey`.
-    pub fn new(user: impl Into<String>, relation: impl Into<String>, object: impl Into<String>) -> Self {
-        Self { user: user.into(), relation: relation.into(), object: object.into() }
+    pub fn new(
+        user: impl Into<String>,
+        relation: impl Into<String>,
+        object: impl Into<String>,
+    ) -> Self {
+        Self {
+            user: user.into(),
+            relation: relation.into(),
+            object: object.into(),
+        }
     }
 }
 
@@ -126,7 +142,10 @@ pub struct ExpandRequestTupleKey {
 impl ExpandRequestTupleKey {
     /// Creates a new `ExpandRequestTupleKey`.
     pub fn new(relation: impl Into<String>, object: impl Into<String>) -> Self {
-        Self { relation: relation.into(), object: object.into() }
+        Self {
+            relation: relation.into(),
+            object: object.into(),
+        }
     }
 }
 

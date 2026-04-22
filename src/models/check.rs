@@ -3,8 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::{
-    consistency::ConsistencyPreference,
-    contextual_tuples::ContextualTupleKeys,
+    consistency::ConsistencyPreference, contextual_tuples::ContextualTupleKeys,
     tuple::CheckRequestTupleKey,
 };
 

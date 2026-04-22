@@ -70,7 +70,10 @@ impl Configuration {
 
         // Validate URL format.
         Url::parse(&cfg.api_url).map_err(|e| {
-            OpenFgaError::Configuration(format!("api_url '{}' is not a valid URL: {}", cfg.api_url, e))
+            OpenFgaError::Configuration(format!(
+                "api_url '{}' is not a valid URL: {}",
+                cfg.api_url, e
+            ))
         })?;
 
         // Default user agent.
@@ -85,8 +88,7 @@ impl Configuration {
 
         // Validate retry params.
         if let Some(ref rp) = cfg.retry_params {
-            rp.validate()
-                .map_err(|e| OpenFgaError::Configuration(e))?;
+            rp.validate().map_err(|e| OpenFgaError::Configuration(e))?;
         } else {
             cfg.retry_params = Some(RetryParams::default());
         }

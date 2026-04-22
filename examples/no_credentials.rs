@@ -14,7 +14,8 @@ use openfga_sdk::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let api_url = std::env::var("FGA_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let api_url =
+        std::env::var("FGA_API_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
 
     // Initialize the client (no credentials).
     let client = OpenFgaClient::new(&ClientConfiguration {

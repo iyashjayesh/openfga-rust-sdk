@@ -189,12 +189,15 @@ pub struct FgaApiAuthenticationError {
 
 impl FgaApiAuthenticationError {
     #[allow(missing_docs)]
-pub fn new(ctx: ApiErrorContext) -> Self {
+    pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} auth error for {} {}",
             ctx.request_method, ctx.endpoint_category, ctx.request_method
         );
-        Self { message, context: ctx }
+        Self {
+            message,
+            context: ctx,
+        }
     }
 }
 
@@ -214,7 +217,7 @@ pub struct FgaApiValidationError {
 
 impl FgaApiValidationError {
     #[allow(missing_docs)]
-pub fn new(mut ctx: ApiErrorContext) -> Self {
+    pub fn new(mut ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} validation error for {} {}",
             ctx.request_method, ctx.endpoint_category, ctx.request_method
@@ -227,7 +230,10 @@ pub fn new(mut ctx: ApiErrorContext) -> Self {
                 }
             }
         }
-        Self { message, context: ctx }
+        Self {
+            message,
+            context: ctx,
+        }
     }
 }
 
@@ -247,12 +253,15 @@ pub struct FgaApiNotFoundError {
 
 impl FgaApiNotFoundError {
     #[allow(missing_docs)]
-pub fn new(ctx: ApiErrorContext) -> Self {
+    pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} not found error for {}",
             ctx.request_method, ctx.endpoint_category
         );
-        Self { message, context: ctx }
+        Self {
+            message,
+            context: ctx,
+        }
     }
 }
 
@@ -280,13 +289,13 @@ pub struct FgaApiRateLimitExceededError {
 
 impl FgaApiRateLimitExceededError {
     #[allow(missing_docs)]
-pub fn new(ctx: ApiErrorContext) -> Self {
+    pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} rate limit error for {}",
             ctx.request_method, ctx.endpoint_category
         );
-        let retry_after_ms = parse_retry_after_header(&ctx.response_headers)
-            .map(|d| d.as_millis() as u64);
+        let retry_after_ms =
+            parse_retry_after_header(&ctx.response_headers).map(|d| d.as_millis() as u64);
         let rate_limit_reset_epoch = ctx
             .response_headers
             .get(crate::internal::retry::RATE_LIMIT_RESET_HEADER)
@@ -347,14 +356,18 @@ pub struct FgaApiInternalError {
 
 impl FgaApiInternalError {
     #[allow(missing_docs)]
-pub fn new(ctx: ApiErrorContext) -> Self {
+    pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} internal error for {}",
             ctx.request_method, ctx.endpoint_category
         );
-        let retry_after_ms = parse_retry_after_header(&ctx.response_headers)
-            .map(|d| d.as_millis() as u64);
-        Self { message, context: ctx, retry_after_ms }
+        let retry_after_ms =
+            parse_retry_after_header(&ctx.response_headers).map(|d| d.as_millis() as u64);
+        Self {
+            message,
+            context: ctx,
+            retry_after_ms,
+        }
     }
 
     /// Returns `false` for 501 Not Implemented (cannot be retried).
@@ -393,12 +406,15 @@ pub struct FgaApiError {
 
 impl FgaApiError {
     #[allow(missing_docs)]
-pub fn new(ctx: ApiErrorContext) -> Self {
+    pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} error for {} with status {}",
             ctx.request_method, ctx.endpoint_category, ctx.response_status_code
         );
-        Self { message, context: ctx }
+        Self {
+            message,
+            context: ctx,
+        }
     }
 }
 
