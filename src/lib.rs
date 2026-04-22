@@ -1,6 +1,6 @@
 //! # OpenFGA Rust SDK
 //!
-//! The official Rust SDK for [OpenFGA](https://openfga.dev) - an open-source
+//! The Rust SDK for [OpenFGA](https://openfga.dev) - an open-source
 //! Fine-Grained Authorization solution inspired by Google's Zanzibar paper.
 //!
 //! ## Quick Start
