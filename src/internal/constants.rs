@@ -23,7 +23,7 @@ pub const CLIENT_MAX_METHOD_PARALLEL_REQUESTS: usize = 10;
 pub const CLIENT_BATCH_CHECK_DEFAULT_SIZE: usize = 50;
 
 /// Default batch size for server-side BatchCheck splits.
-pub const CLIENT_BATCH_CHECK_MAX_SIZE: usize = 50;
+pub(crate) const CLIENT_BATCH_CHECK_MAX_SIZE: usize = 50;
 
 /// Token expiry jitter (seconds subtracted from `expires_in`).
 /// Prevents thundering-herd refresh against token issuers.

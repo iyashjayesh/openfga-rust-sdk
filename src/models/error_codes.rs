@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 /// Machine-readable error codes for validation / request errors.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub enum ErrorCode {
     #[serde(rename = "no_error")]
     NoError,
@@ -95,6 +96,7 @@ pub enum ErrorCode {
 
 /// Error codes for authentication failures.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub enum AuthErrorCode {
     #[serde(rename = "auth_failed_invalid_subject")]
     AuthFailedInvalidSubject,
@@ -118,6 +120,7 @@ pub enum AuthErrorCode {
 
 /// Error codes for 404 not found responses.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub enum NotFoundErrorCode {
     #[serde(rename = "no_not_found_error")]
     NoNotFoundError,
@@ -135,6 +138,7 @@ pub enum NotFoundErrorCode {
 
 /// Error codes for internal server errors.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub enum InternalErrorCode {
     #[serde(rename = "no_internal_error")]
     NoInternalError,

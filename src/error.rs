@@ -100,6 +100,19 @@ impl OpenFgaError {
             _ => Duration::ZERO,
         }
     }
+
+    /// Returns the HTTP status code associated with this error, if any.
+    pub fn status_code(&self) -> Option<u16> {
+        match self {
+            Self::Authentication(e) => Some(e.context.response_status_code),
+            Self::Validation(e) => Some(e.context.response_status_code),
+            Self::NotFound(e) => Some(e.context.response_status_code),
+            Self::RateLimitExceeded(e) => Some(e.context.response_status_code),
+            Self::Internal(e) => Some(e.context.response_status_code),
+            Self::Api(e) => Some(e.context.response_status_code),
+            _ => None,
+        }
+    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -175,7 +188,8 @@ pub struct FgaApiAuthenticationError {
 }
 
 impl FgaApiAuthenticationError {
-    pub(crate) fn new(ctx: ApiErrorContext) -> Self {
+    #[allow(missing_docs)]
+pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} auth error for {} {}",
             ctx.request_method, ctx.endpoint_category, ctx.request_method
@@ -199,7 +213,8 @@ pub struct FgaApiValidationError {
 }
 
 impl FgaApiValidationError {
-    pub(crate) fn new(mut ctx: ApiErrorContext) -> Self {
+    #[allow(missing_docs)]
+pub fn new(mut ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} validation error for {} {}",
             ctx.request_method, ctx.endpoint_category, ctx.request_method
@@ -231,7 +246,8 @@ pub struct FgaApiNotFoundError {
 }
 
 impl FgaApiNotFoundError {
-    pub(crate) fn new(ctx: ApiErrorContext) -> Self {
+    #[allow(missing_docs)]
+pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} not found error for {}",
             ctx.request_method, ctx.endpoint_category
@@ -263,7 +279,8 @@ pub struct FgaApiRateLimitExceededError {
 }
 
 impl FgaApiRateLimitExceededError {
-    pub(crate) fn new(ctx: ApiErrorContext) -> Self {
+    #[allow(missing_docs)]
+pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} rate limit error for {}",
             ctx.request_method, ctx.endpoint_category
@@ -329,7 +346,8 @@ pub struct FgaApiInternalError {
 }
 
 impl FgaApiInternalError {
-    pub(crate) fn new(ctx: ApiErrorContext) -> Self {
+    #[allow(missing_docs)]
+pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} internal error for {}",
             ctx.request_method, ctx.endpoint_category
@@ -374,7 +392,8 @@ pub struct FgaApiError {
 }
 
 impl FgaApiError {
-    pub(crate) fn new(ctx: ApiErrorContext) -> Self {
+    #[allow(missing_docs)]
+pub fn new(ctx: ApiErrorContext) -> Self {
         let message = format!(
             "{} error for {} with status {}",
             ctx.request_method, ctx.endpoint_category, ctx.response_status_code

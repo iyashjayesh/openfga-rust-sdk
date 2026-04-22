@@ -7,12 +7,18 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use reqwest::{header::HeaderMap, Method};
 use serde::de::DeserializeOwned;
-use tokio::time::sleep;
-
 use crate::{
     error::{OpenFgaError, Result},
     internal::retry::RetryParams,
 };
+
+#[cfg(feature = "opentelemetry")]
+use crate::telemetry::attributes;
+
+use tokio::time::{sleep, Instant};
+
+#[cfg(feature = "opentelemetry")]
+use opentelemetry::KeyValue;
 
 use super::api_client::ApiClient;
 
@@ -127,9 +133,9 @@ pub trait ApiExecutor: Send + Sync {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Concrete `ApiExecutor` backed by an [`ApiClient`].
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ApiExecutorImpl {
-    client: ApiClient,
+    pub(crate) client: ApiClient,
 }
 
 impl ApiExecutorImpl {
@@ -142,7 +148,18 @@ impl ApiExecutorImpl {
         self.client.cfg.get_retry_params()
     }
 
+    #[cfg(feature = "opentelemetry")]
+    fn get_base_attributes(&self, req: &ApiExecutorRequest, store_id: &str) -> Vec<KeyValue> {
+        vec![
+            KeyValue::new(attributes::FGA_CLIENT_REQUEST_METHOD, req.operation_name.clone()),
+            KeyValue::new(attributes::FGA_CLIENT_REQUEST_STORE_ID, store_id.to_string()),
+            KeyValue::new(attributes::HTTP_REQUEST_METHOD, req.method.to_uppercase()),
+        ]
+    }
+
     async fn execute_internal(&self, req: &ApiExecutorRequest) -> Result<ApiExecutorResponse> {
+        #[cfg(feature = "opentelemetry")]
+        let start_time = Instant::now();
         let retry = self.retry_params();
         let store_id = req
             .path_parameters
@@ -171,10 +188,15 @@ impl ApiExecutorImpl {
                 }
             }
 
+            #[cfg(feature = "opentelemetry")]
+            let http_start = Instant::now();
             let resp = self
                 .client
                 .call(method.clone(), &path, headers.clone(), query, req.body.clone())
                 .await;
+
+            #[cfg(feature = "opentelemetry")]
+            let http_duration = http_start.elapsed().as_millis() as f64;
 
             match resp {
                 Ok(r) => {
@@ -190,6 +212,27 @@ impl ApiExecutorImpl {
 
                     let status_code = r.status().as_u16();
                     let resp_headers = r.headers().clone();
+
+                    #[cfg(feature = "opentelemetry")]
+                    {
+                        let mut attrs = self.get_base_attributes(req, store_id);
+                        attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status_code as i64));
+
+                        self.client.telemetry.record_http_request_duration(http_duration, &attrs);
+
+                        if let Some(val) = resp_headers.get("fga-query-duration-ms") {
+                            if let Ok(ms_str) = val.to_str() {
+                                if let Ok(ms) = ms_str.parse::<f64>() {
+                                    self.client.telemetry.record_query_duration(ms, &attrs);
+                                }
+                            }
+                        }
+
+                        let total_ms = start_time.elapsed().as_millis() as f64;
+                        self.client.telemetry.record_request_duration(total_ms, &attrs);
+                        self.client.telemetry.record_request_count(&attrs);
+                    }
+
                     let body = r
                         .bytes()
                         .await
@@ -201,7 +244,30 @@ impl ApiExecutorImpl {
                     });
                 }
                 Err(e) => {
+                    #[cfg(feature = "opentelemetry")]
+                    {
+                        let mut attrs = self.get_base_attributes(req, store_id);
+                        // For errors, status code might be available in context
+                        if let Some(status) = e.status_code() {
+                            attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status as i64));
+                        }
+                        self.client.telemetry.record_http_request_duration(http_duration, &attrs);
+                        // We record counts and durations even for failed attempts in Go SDK?
+                        // Actually fga_client.request.duration is usually for the whole sequence.
+                        // fga_client.request.count is usually on final completion/error.
+                    }
+
                     if !e.should_retry() {
+                        #[cfg(feature = "opentelemetry")]
+                        {
+                            let mut attrs = self.get_base_attributes(req, store_id);
+                            if let Some(status) = e.status_code() {
+                                attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status as i64));
+                            }
+                            let total_ms = start_time.elapsed().as_millis() as f64;
+                            self.client.telemetry.record_request_duration(total_ms, &attrs);
+                            self.client.telemetry.record_request_count(&attrs);
+                        }
                         return Err(e);
                     }
                     last_err = Some(e);
@@ -209,9 +275,22 @@ impl ApiExecutorImpl {
             }
         }
 
-        Err(last_err.unwrap_or_else(|| {
+        let err = last_err.unwrap_or_else(|| {
             OpenFgaError::Configuration("Max retries exceeded with no response".to_string())
-        }))
+        });
+
+        #[cfg(feature = "opentelemetry")]
+        {
+            let mut attrs = self.get_base_attributes(req, store_id);
+            if let Some(status) = err.status_code() {
+                attrs.push(KeyValue::new(attributes::HTTP_RESPONSE_STATUS_CODE, status as i64));
+            }
+            let total_ms = start_time.elapsed().as_millis() as f64;
+            self.client.telemetry.record_request_duration(total_ms, &attrs);
+            self.client.telemetry.record_request_count(&attrs);
+        }
+
+        Err(err)
     }
 }
 

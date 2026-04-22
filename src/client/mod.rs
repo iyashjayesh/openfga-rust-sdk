@@ -16,7 +16,7 @@ use crate::{
     api::{
         api_client::ApiClient,
         configuration::Configuration,
-        executor::{ApiExecutor, ApiExecutorImpl, ApiExecutorRequest},
+        executor::{ApiExecutor, ApiExecutorImpl, ApiExecutorRequest, ApiExecutorResponse},
     },
     credentials::Credentials,
     error::{OpenFgaError, Result},
@@ -223,7 +223,7 @@ pub struct ClientWriteResponse {
 ///     Ok(())
 /// }
 /// ```
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OpenFgaClient {
     executor: ApiExecutorImpl,
     store_id: Arc<RwLock<Option<String>>>,
@@ -752,7 +752,7 @@ impl OpenFgaClient {
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ClientBatchCheckResponse> {
         let _max_parallel = CLIENT_MAX_METHOD_PARALLEL_REQUESTS;
-        let mut handles = Vec::with_capacity(items.len());
+        let mut handles: Vec<(String, ClientBatchCheckItem, tokio::task::JoinHandle<Result<(ApiExecutorResponse, CheckResponse)>>)> = Vec::with_capacity(items.len());
 
         for item in items {
             let executor = self.executor.clone();
@@ -855,6 +855,74 @@ impl OpenFgaClient {
         .with_path_param("store_id", store_id);
         let (_, resp) = self.executor.execute_with_decode(req).await?;
         Ok(resp)
+    }
+
+    /// Streams objects a user has access to using the NDJSON `StreamedListObjects` endpoint.
+    ///
+    /// Returns a [`crate::streaming::NdJsonStream`] that yields each object as
+    /// it arrives.  Use `futures::StreamExt::next` to iterate.
+    ///
+    /// ```rust,no_run
+    /// use futures::StreamExt;
+    /// # async fn example(client: openfga_sdk::client::OpenFgaClient, body: openfga_sdk::models::ListObjectsRequest) -> openfga_sdk::error::Result<()> {
+    /// let mut stream = client.stream_list_objects(body, None).await?;
+    /// while let Some(item) = stream.next().await {
+    ///     println!("{}", item?.object);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn stream_list_objects(
+        &self,
+        mut body: ListObjectsRequest,
+        opts: Option<&ClientRequestOptions>,
+    ) -> Result<crate::streaming::NdJsonStream> {
+        use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+        use url::Url;
+
+        let store_id = self.effective_store_id(opts).await?;
+        if body.authorization_model_id.is_none() {
+            body.authorization_model_id = self.effective_model_id(opts).await;
+        }
+
+        let api_url = &self.executor.client.cfg.api_url;
+        let base = Url::parse(api_url).map_err(OpenFgaError::Url)?;
+        let url = base
+            .join(&format!("/stores/{}/streamed-list-objects", store_id))
+            .map_err(OpenFgaError::Url)?;
+
+        let body_val = serde_json::to_value(&body).map_err(OpenFgaError::Json)?;
+
+        // Build default headers from config.
+        let mut headers = HeaderMap::new();
+        for (k, v) in &self.executor.client.cfg.default_headers {
+            if let (Ok(name), Ok(val)) = (
+                HeaderName::from_bytes(k.as_bytes()),
+                HeaderValue::from_str(v),
+            ) {
+                headers.insert(name, val);
+            }
+        }
+
+        let resp = self
+            .executor
+            .client
+            .http
+            .post(url)
+            .headers(headers)
+            .json(&body_val)
+            .send()
+            .await
+            .map_err(|e| OpenFgaError::Http(e.to_string()))?;
+
+        if !resp.status().is_success() {
+            let err =
+                crate::api::api_client::ApiClient::handle_error_response(resp, &store_id, "StreamedListObjects")
+                    .await;
+            return Err(err);
+        }
+
+        Ok(crate::streaming::NdJsonStream::new(resp))
     }
 
     /// Lists users that have a relation with an object.

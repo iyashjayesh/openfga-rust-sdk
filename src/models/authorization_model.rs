@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 /// The type name for a condition parameter.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[allow(missing_docs)]
 pub enum TypeName {
     #[serde(rename = "TYPE_NAME_UNSPECIFIED")]
     Unspecified,

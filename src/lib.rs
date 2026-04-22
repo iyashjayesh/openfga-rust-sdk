@@ -36,6 +36,7 @@ pub mod credentials;
 pub mod error;
 pub mod models;
 pub mod oauth2;
+pub mod streaming;
 pub mod telemetry;
 
 pub(crate) mod api;

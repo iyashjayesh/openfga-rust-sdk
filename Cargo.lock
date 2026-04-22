@@ -830,6 +830,7 @@ dependencies = [
  "futures",
  "opentelemetry",
  "opentelemetry_sdk",
+ "pin-project-lite",
  "reqwest",
  "serde",
  "serde_json",

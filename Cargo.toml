@@ -12,6 +12,12 @@ documentation = "https://docs.rs/openfga-sdk"
 keywords = ["openfga", "authorization", "fga", "zanzibar", "access-control"]
 categories = ["authentication", "web-programming::http-client"]
 readme = "README.md"
+exclude = [
+    "tests/**",
+    "examples/**",
+    "Makefile",
+    ".github/**",
+]
 
 [features]
 default = ["rustls"]
@@ -66,6 +72,9 @@ opentelemetry_sdk = { version = "0.27", optional = true, features = ["metrics"] 
 
 # Bytes
 bytes = "1"
+
+# Pin-project (for streaming)
+pin-project-lite = "0.2"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

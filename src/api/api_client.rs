@@ -25,6 +25,7 @@ use super::configuration::Configuration;
 pub struct ApiClient {
     pub(crate) cfg: Configuration,
     pub(crate) http: Client,
+    pub(crate) telemetry: crate::telemetry::FgaTelemetry,
 }
 
 impl ApiClient {
@@ -39,7 +40,10 @@ impl ApiClient {
         } else {
             Self::build_http_client(&cfg)?
         };
-        Ok(Self { cfg, http })
+        let telemetry = crate::telemetry::FgaTelemetry::new(
+            cfg.telemetry.clone().unwrap_or_default(),
+        );
+        Ok(Self { cfg, http, telemetry })
     }
 
     /// Builds a default `reqwest::Client` based on the configuration.
