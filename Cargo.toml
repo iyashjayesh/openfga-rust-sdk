@@ -1,0 +1,81 @@
+[package]
+name = "openfga-sdk"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["OpenFGA Authors"]
+description = "The official Rust SDK for OpenFGA — Fine-Grained Authorization"
+license = "Apache-2.0"
+repository = "https://github.com/openfga/openfga-rust-sdk"
+homepage = "https://openfga.dev"
+documentation = "https://docs.rs/openfga-sdk"
+keywords = ["openfga", "authorization", "fga", "zanzibar", "access-control"]
+categories = ["authentication", "web-programming::http-client"]
+readme = "README.md"
+
+[features]
+default = ["rustls"]
+# Use rustls for TLS (pure Rust)
+rustls = ["reqwest/rustls-tls"]
+# Use native-tls (system TLS)
+native-tls = ["reqwest/native-tls"]
+# Enable OpenTelemetry metrics
+opentelemetry = [
+    "dep:opentelemetry",
+    "dep:opentelemetry_sdk",
+]
+
+[dependencies]
+# HTTP client
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "stream",
+] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Error handling
+thiserror = "1"
+
+# URL parsing
+url = "2"
+
+# ULID validation
+ulid = "1"
+
+# Async traits
+async-trait = "0.1"
+
+# Concurrent futures
+futures = "0.3"
+
+# Base64 (for token response parsing)
+base64 = "0.22"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# OpenTelemetry (optional)
+opentelemetry = { version = "0.27", optional = true }
+opentelemetry_sdk = { version = "0.27", optional = true, features = ["metrics"] }
+
+# Bytes
+bytes = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+wiremock = "0.6"
+serde_json = "1"
+
+[lib]
+name = "openfga_sdk"
+path = "src/lib.rs"
+
+[[example]]
+name = "no_credentials"
+path = "examples/no_credentials.rs"
