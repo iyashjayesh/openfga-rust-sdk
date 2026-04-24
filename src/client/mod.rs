@@ -1,5 +1,9 @@
 //! High-level OpenFGA client - mirrors `client/client.go`.
 //!
+//! Only compiled when the `default-executor` feature is enabled.
+
+#![cfg(feature = "default-executor")]
+//!
 //! [`OpenFgaClient`] is the recommended entry point for users. It wraps the
 //! lower-level [`ApiClient`] and [`ApiExecutor`] with:
 //!
@@ -9,8 +13,7 @@
 //! - Parallel `ClientBatchCheck`
 //! - Convenience helpers: `write_tuples`, `delete_tuples`, `read_latest_authorization_model`
 
-use std::{collections::HashMap, sync::Arc};
-use tokio::sync::RwLock;
+use std::collections::HashMap;
 
 use crate::{
     api::{
@@ -222,8 +225,10 @@ pub struct ClientWriteResponse {
 #[derive(Clone, Debug)]
 pub struct OpenFgaClient {
     executor: ApiExecutorImpl,
-    store_id: Arc<RwLock<Option<String>>>,
-    authorization_model_id: Arc<RwLock<Option<String>>>,
+    /// Store ID fixed at construction time.
+    store_id: Option<String>,
+    /// Authorization model ID fixed at construction time.
+    authorization_model_id: Option<String>,
 }
 
 impl OpenFgaClient {
@@ -268,8 +273,8 @@ impl OpenFgaClient {
 
         Ok(Self {
             executor,
-            store_id: Arc::new(RwLock::new(cfg.store_id.clone())),
-            authorization_model_id: Arc::new(RwLock::new(cfg.authorization_model_id.clone())),
+            store_id: cfg.store_id.clone(),
+            authorization_model_id: cfg.authorization_model_id.clone(),
         })
     }
 
@@ -277,63 +282,40 @@ impl OpenFgaClient {
     // Store ID / Model ID management
     // ────────────────────────────────────────────────────────────────────────
 
-    /// Returns the current store ID.
-    pub async fn store_id(&self) -> Result<String> {
-        let guard = self.store_id.read().await;
-        guard
-            .clone()
+    /// Returns the store ID configured at construction time.
+    ///
+    /// The store ID is immutable for the lifetime of the client. To use a
+    /// different store, construct a new [`OpenFgaClient`].
+    pub fn store_id(&self) -> Result<&str> {
+        self.store_id
+            .as_deref()
             .ok_or_else(|| OpenFgaError::Configuration("No store_id configured".to_string()))
     }
 
-    /// Sets the store ID. Must be a valid ULID.
-    pub async fn set_store_id(&self, id: impl Into<String>) -> Result<()> {
-        let id = id.into();
-        if !is_well_formed_ulid(&id) {
-            return Err(OpenFgaError::InvalidParam {
-                param: "store_id".to_string(),
-                description: format!("'{}' is not a valid ULID", id),
-            });
-        }
-        let mut guard = self.store_id.write().await;
-        *guard = Some(id);
-        Ok(())
-    }
-
-    /// Returns the current authorization model ID.
-    pub async fn authorization_model_id(&self) -> Option<String> {
-        self.authorization_model_id.read().await.clone()
-    }
-
-    /// Sets the authorization model ID. Must be a valid ULID.
-    pub async fn set_authorization_model_id(&self, id: impl Into<String>) -> Result<()> {
-        let id = id.into();
-        if !is_well_formed_ulid(&id) {
-            return Err(OpenFgaError::InvalidParam {
-                param: "authorization_model_id".to_string(),
-                description: format!("'{}' is not a valid ULID", id),
-            });
-        }
-        let mut guard = self.authorization_model_id.write().await;
-        *guard = Some(id);
-        Ok(())
+    /// Returns the authorization model ID configured at construction time, if any.
+    ///
+    /// The model ID is immutable for the lifetime of the client. To use a
+    /// different model, construct a new [`OpenFgaClient`].
+    pub fn authorization_model_id(&self) -> Option<&str> {
+        self.authorization_model_id.as_deref()
     }
 
     // ────────────────────────────────────────────────────────────────────────
     // Helpers
     // ────────────────────────────────────────────────────────────────────────
 
-    async fn effective_store_id(&self, opts: Option<&ClientRequestOptions>) -> Result<String> {
+    fn effective_store_id(&self, opts: Option<&ClientRequestOptions>) -> Result<String> {
         if let Some(sid) = opts.and_then(|o| o.store_id.as_deref()) {
             return Ok(sid.to_string());
         }
-        self.store_id().await
+        self.store_id().map(str::to_string)
     }
 
-    async fn effective_model_id(&self, opts: Option<&ClientRequestOptions>) -> Option<String> {
+    fn effective_model_id(&self, opts: Option<&ClientRequestOptions>) -> Option<String> {
         if let Some(mid) = opts.and_then(|o| o.authorization_model_id.as_deref()) {
             return Some(mid.to_string());
         }
-        self.authorization_model_id().await
+        self.authorization_model_id().map(str::to_string)
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -377,7 +359,7 @@ impl OpenFgaClient {
 
     /// Gets the current store.
     pub async fn get_store(&self, opts: Option<&ClientRequestOptions>) -> Result<GetStoreResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let req = ApiExecutorRequest {
             operation_name: "GetStore".to_string(),
             method: "GET".to_string(),
@@ -391,7 +373,7 @@ impl OpenFgaClient {
 
     /// Deletes the current store.
     pub async fn delete_store(&self, opts: Option<&ClientRequestOptions>) -> Result<()> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let req = ApiExecutorRequest {
             operation_name: "DeleteStore".to_string(),
             method: "DELETE".to_string(),
@@ -414,7 +396,7 @@ impl OpenFgaClient {
         continuation_token: Option<String>,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadAuthorizationModelsResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let mut req = ApiExecutorRequest {
             operation_name: "ReadAuthorizationModels".to_string(),
             method: "GET".to_string(),
@@ -438,7 +420,7 @@ impl OpenFgaClient {
         body: WriteAuthorizationModelRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<WriteAuthorizationModelResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let req = ApiExecutorRequest {
             operation_name: "WriteAuthorizationModel".to_string(),
             method: "POST".to_string(),
@@ -456,8 +438,8 @@ impl OpenFgaClient {
         &self,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadAuthorizationModelResponse> {
-        let store_id = self.effective_store_id(opts).await?;
-        let model_id = self.effective_model_id(opts).await.ok_or_else(|| {
+        let store_id = self.effective_store_id(opts)?;
+        let model_id = self.effective_model_id(opts).ok_or_else(|| {
             OpenFgaError::Configuration("No authorization_model_id configured".to_string())
         })?;
         let req = ApiExecutorRequest {
@@ -477,7 +459,7 @@ impl OpenFgaClient {
         &self,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<Option<AuthorizationModel>> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let req = ApiExecutorRequest {
             operation_name: "ReadAuthorizationModels".to_string(),
             method: "GET".to_string(),
@@ -501,7 +483,7 @@ impl OpenFgaClient {
         body: ReadRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let req = ApiExecutorRequest {
             operation_name: "Read".to_string(),
             method: "POST".to_string(),
@@ -520,8 +502,8 @@ impl OpenFgaClient {
     /// chunks and sent in parallel. Each chunk result is tracked individually.
     pub async fn write(&self, body: WriteRequest, opts: Option<&ClientWriteOptions>) -> Result<()> {
         let base_opts = opts.map(|o| &o.base);
-        let store_id = self.effective_store_id(base_opts).await?;
-        let model_id = self.effective_model_id(base_opts).await;
+        let store_id = self.effective_store_id(base_opts)?;
+        let model_id = self.effective_model_id(base_opts);
 
         let non_tx = opts
             .and_then(|o| o.transaction.as_ref())
@@ -665,7 +647,7 @@ impl OpenFgaClient {
         continuation_token: Option<String>,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadChangesResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         let mut req = ApiExecutorRequest {
             operation_name: "ReadChanges".to_string(),
             method: "GET".to_string(),
@@ -696,9 +678,9 @@ impl OpenFgaClient {
         mut body: CheckRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<CheckResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         if body.authorization_model_id.is_none() {
-            body.authorization_model_id = self.effective_model_id(opts).await;
+            body.authorization_model_id = self.effective_model_id(opts);
         }
         let req = ApiExecutorRequest {
             operation_name: "Check".to_string(),
@@ -718,9 +700,9 @@ impl OpenFgaClient {
         mut body: BatchCheckRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<BatchCheckResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         if body.authorization_model_id.is_none() {
-            body.authorization_model_id = self.effective_model_id(opts).await;
+            body.authorization_model_id = self.effective_model_id(opts);
         }
         let req = ApiExecutorRequest {
             operation_name: "BatchCheck".to_string(),
@@ -752,8 +734,8 @@ impl OpenFgaClient {
 
         for item in items {
             let executor = self.executor.clone();
-            let store_id = self.effective_store_id(opts).await?;
-            let model_id = self.effective_model_id(opts).await;
+            let store_id = self.effective_store_id(opts)?;
+            let model_id = self.effective_model_id(opts);
             let body = CheckRequest {
                 tuple_key: crate::models::CheckRequestTupleKey::new(
                     item.user.clone(),
@@ -815,9 +797,9 @@ impl OpenFgaClient {
         mut body: ExpandRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ExpandResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         if body.authorization_model_id.is_none() {
-            body.authorization_model_id = self.effective_model_id(opts).await;
+            body.authorization_model_id = self.effective_model_id(opts);
         }
         let req = ApiExecutorRequest {
             operation_name: "Expand".to_string(),
@@ -837,9 +819,9 @@ impl OpenFgaClient {
         mut body: ListObjectsRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ListObjectsResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         if body.authorization_model_id.is_none() {
-            body.authorization_model_id = self.effective_model_id(opts).await;
+            body.authorization_model_id = self.effective_model_id(opts);
         }
         let req = ApiExecutorRequest {
             operation_name: "ListObjects".to_string(),
@@ -876,9 +858,9 @@ impl OpenFgaClient {
         use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
         use url::Url;
 
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         if body.authorization_model_id.is_none() {
-            body.authorization_model_id = self.effective_model_id(opts).await;
+            body.authorization_model_id = self.effective_model_id(opts);
         }
 
         let api_url = &self.executor.client.cfg.api_url;
@@ -930,9 +912,9 @@ impl OpenFgaClient {
         mut body: ListUsersRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ListUsersResponse> {
-        let store_id = self.effective_store_id(opts).await?;
+        let store_id = self.effective_store_id(opts)?;
         if body.authorization_model_id.is_none() {
-            body.authorization_model_id = self.effective_model_id(opts).await;
+            body.authorization_model_id = self.effective_model_id(opts);
         }
         let req = ApiExecutorRequest {
             operation_name: "ListUsers".to_string(),
@@ -955,8 +937,8 @@ impl OpenFgaClient {
         &self,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<ReadAssertionsResponse> {
-        let store_id = self.effective_store_id(opts).await?;
-        let model_id = self.effective_model_id(opts).await.ok_or_else(|| {
+        let store_id = self.effective_store_id(opts)?;
+        let model_id = self.effective_model_id(opts).ok_or_else(|| {
             OpenFgaError::Configuration("No authorization_model_id configured".to_string())
         })?;
         let req = ApiExecutorRequest {
@@ -977,8 +959,8 @@ impl OpenFgaClient {
         body: WriteAssertionsRequest,
         opts: Option<&ClientRequestOptions>,
     ) -> Result<()> {
-        let store_id = self.effective_store_id(opts).await?;
-        let model_id = self.effective_model_id(opts).await.ok_or_else(|| {
+        let store_id = self.effective_store_id(opts)?;
+        let model_id = self.effective_model_id(opts).ok_or_else(|| {
             OpenFgaError::Configuration("No authorization_model_id configured".to_string())
         })?;
         let req = ApiExecutorRequest {
