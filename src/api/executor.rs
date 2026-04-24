@@ -151,7 +151,6 @@ use std::future::Future;
 mod impl_executor {
     use reqwest::Method;
     use tokio::time::sleep;
-    use url::Url;
 
     use crate::{
         api::api_client::ApiClient,
@@ -165,6 +164,8 @@ mod impl_executor {
     use opentelemetry::KeyValue;
     #[cfg(feature = "opentelemetry")]
     use tokio::time::Instant;
+    #[cfg(feature = "opentelemetry")]
+    use url::Url;
 
     use super::{ApiExecutor, ApiExecutorRequest, ApiExecutorResponse};
     use serde::de::DeserializeOwned;
