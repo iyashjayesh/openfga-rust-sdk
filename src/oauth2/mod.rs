@@ -1,4 +1,8 @@
 //! OAuth2 Client Credentials flow - mirrors `oauth2/` from the Go SDK.
+//!
+//! Only compiled when the `default-executor` feature is enabled.
+
+#![cfg(feature = "default-executor")]
 
 use std::{
     sync::Arc,

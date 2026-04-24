@@ -20,61 +20,78 @@ exclude = [
 ]
 
 [features]
-default = ["rustls"]
-# Use rustls for TLS (pure Rust)
+# Default: include the bundled tokio/reqwest executor so the SDK is usable out
+# of the box.  Disable with `default-features = false` if you want to bring
+# your own executor.
+default = ["rustls", "default-executor"]
+
+# Use rustls for TLS (pure Rust). Requires default-executor.
 rustls = ["reqwest/rustls-tls"]
-# Use native-tls (system TLS)
+# Use native-tls (system TLS). Requires default-executor.
 native-tls = ["reqwest/native-tls"]
-# Enable OpenTelemetry metrics
+
+# Bundled executor: enables ApiClient, ApiExecutorImpl, OpenFgaClient and all
+# transitive runtime dependencies (tokio, reqwest, …).  Consumers who provide
+# their own ApiExecutor implementation should disable this feature.
+default-executor = [
+    "dep:reqwest",
+    "dep:tokio",
+    "dep:bytes",
+    "dep:pin-project-lite",
+    "dep:futures",
+]
+
+# Enable OpenTelemetry metrics (only useful with default-executor).
 opentelemetry = [
     "dep:opentelemetry",
     "dep:opentelemetry_sdk",
 ]
 
 [dependencies]
+# Serialization (always required)
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Error handling (always required)
+thiserror = "1"
+
+# URL parsing (always required for configuration validation)
+url = "2"
+
+# ULID validation (always required)
+ulid = "1"
+
+# Time (always required for retry / token expiry logic)
+chrono = { version = "0.4", features = ["serde"] }
+
+# ── Optional: only present with the `default-executor` feature ───────────────
+
 # HTTP client
 reqwest = { version = "0.12", default-features = false, features = [
     "json",
     "stream",
-] }
+], optional = true }
 
 # Async runtime
-tokio = { version = "1", features = ["full"] }
-
-# Serialization
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-
-# Error handling
-thiserror = "1"
-
-# URL parsing
-url = "2"
-
-# ULID validation
-ulid = "1"
-
-# Async traits
-async-trait = "0.1"
+tokio = { version = "1", features = ["full"], optional = true }
 
 # Concurrent futures
-futures = "0.3"
+futures = { version = "0.3", optional = true }
 
-# Base64 (for token response parsing)
-base64 = "0.22"
+# Bytes
+bytes = { version = "1", optional = true }
 
-# Time
-chrono = { version = "0.4", features = ["serde"] }
+# Pin-project (for streaming)
+pin-project-lite = { version = "0.2", optional = true }
+
+# ── Optional: OpenTelemetry ──────────────────────────────────────────────────
 
 # OpenTelemetry (optional)
 opentelemetry = { version = "0.27", optional = true }
 opentelemetry_sdk = { version = "0.27", optional = true, features = ["metrics"] }
 
-# Bytes
-bytes = "1"
-
-# Pin-project (for streaming)
-pin-project-lite = "0.2"
+# Base64 (for token response parsing; only needed with default-executor)
+base64 = "0.22"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

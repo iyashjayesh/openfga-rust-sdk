@@ -1,4 +1,8 @@
 //! Low-level API client - mirrors `api_client.go`.
+//!
+//! Only compiled when the `default-executor` feature is enabled.
+
+#![cfg(feature = "default-executor")]
 
 use reqwest::{
     header::{HeaderMap, HeaderName, HeaderValue},

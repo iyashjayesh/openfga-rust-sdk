@@ -4,9 +4,13 @@
 //! context (store ID, endpoint, HTTP status, request ID) so callers can
 //! act on errors without parsing strings.
 
-use reqwest::header::HeaderMap;
 use std::time::Duration;
 use thiserror::Error;
+
+#[cfg(not(feature = "default-executor"))]
+use crate::internal::retry::HeaderMap;
+#[cfg(feature = "default-executor")]
+use reqwest::header::HeaderMap;
 
 use crate::internal::retry::{get_time_to_wait, parse_retry_after_header, RetryParams};
 
@@ -94,7 +98,7 @@ impl OpenFgaError {
                 attempt,
                 retry_params.max_retry,
                 retry_params.min_wait_ms,
-                &HeaderMap::new(),
+                &HeaderMap::default(),
                 "http",
             ),
             _ => Duration::ZERO,
@@ -132,7 +136,11 @@ pub struct ApiErrorContext {
     pub request_host: String,
     /// HTTP status code returned by the server.
     pub response_status_code: u16,
-    /// Full response headers.
+    /// Full response headers (only available with `default-executor`).
+    #[cfg(feature = "default-executor")]
+    pub response_headers: reqwest::header::HeaderMap,
+    /// Stub header storage when `default-executor` is disabled.
+    #[cfg(not(feature = "default-executor"))]
     pub response_headers: HeaderMap,
     /// `Fga-Request-Id` or `X-Request-Id` from the response headers.
     pub request_id: String,
@@ -143,13 +151,14 @@ pub struct ApiErrorContext {
 }
 
 impl ApiErrorContext {
+    #[cfg(feature = "default-executor")]
     pub(crate) fn from_response(
         store_id: &str,
         endpoint_category: &str,
         request_method: &str,
         request_host: &str,
         status: u16,
-        headers: &HeaderMap,
+        headers: &reqwest::header::HeaderMap,
         body: Vec<u8>,
     ) -> Self {
         let request_id = headers
@@ -296,21 +305,33 @@ impl FgaApiRateLimitExceededError {
         );
         let retry_after_ms =
             parse_retry_after_header(&ctx.response_headers).map(|d| d.as_millis() as u64);
+        #[cfg(feature = "default-executor")]
         let rate_limit_reset_epoch = ctx
             .response_headers
             .get(crate::internal::retry::RATE_LIMIT_RESET_HEADER)
             .and_then(|v| v.to_str().ok())
             .map(str::to_string);
+        #[cfg(not(feature = "default-executor"))]
+        let rate_limit_reset_epoch: Option<String> = None;
+
+        #[cfg(feature = "default-executor")]
         let rate_limit = ctx
             .response_headers
             .get("X-RateLimit-Limit")
             .and_then(|v| v.to_str().ok())
-            .and_then(|s| s.parse().ok());
+            .and_then(|s: &str| s.parse().ok());
+        #[cfg(not(feature = "default-executor"))]
+        let rate_limit: Option<u32> = None;
+
+        #[cfg(feature = "default-executor")]
         let rate_unit = ctx
             .response_headers
             .get("X-RateLimit-Unit")
             .and_then(|v| v.to_str().ok())
             .map(str::to_string);
+        #[cfg(not(feature = "default-executor"))]
+        let rate_unit: Option<String> = None;
+
         Self {
             message,
             context: ctx,

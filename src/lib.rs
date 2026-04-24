@@ -35,7 +35,9 @@ pub mod client;
 pub mod credentials;
 pub mod error;
 pub mod models;
+#[cfg(feature = "default-executor")]
 pub mod oauth2;
+#[cfg(feature = "default-executor")]
 pub mod streaming;
 pub mod telemetry;
 
@@ -43,6 +45,7 @@ pub(crate) mod api;
 pub(crate) mod internal;
 
 // Re-export commonly used types at the crate root.
+#[cfg(feature = "default-executor")]
 pub use client::{ClientConfiguration, OpenFgaClient};
 pub use error::OpenFgaError;
 pub use models::*;

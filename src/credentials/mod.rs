@@ -1,5 +1,6 @@
 //! Credentials - mirrors `credentials/credentials.go`.
 
+#[cfg(feature = "default-executor")]
 use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 
@@ -156,6 +157,7 @@ impl Credentials {
     /// - `None`: no-op.
     /// - `ApiToken`: adds a default `Authorization` header.
     /// - `ClientCredentials`: (token refresh middleware added at request time).
+    #[cfg(feature = "default-executor")]
     pub(crate) fn apply_to_client_builder(&self, builder: ClientBuilder) -> ClientBuilder {
         if let Some(auth) = self.static_auth_header() {
             let mut headers = reqwest::header::HeaderMap::new();

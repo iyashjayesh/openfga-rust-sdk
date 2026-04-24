@@ -3,6 +3,10 @@
 //! OpenFGA returns each matching object as a single JSON object on its own line.
 //! This module wraps the raw `reqwest::Response` byte stream in a
 //! [`futures::Stream`] that yields decoded [`StreamedListObjectsResponse`] items.
+//!
+//! Only compiled when the `default-executor` feature is enabled.
+
+#![cfg(feature = "default-executor")]
 
 use std::pin::Pin;
 use std::task::{Context, Poll};

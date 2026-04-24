@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+#[cfg(feature = "default-executor")]
 use reqwest::Client;
 use url::Url;
 
@@ -32,6 +33,8 @@ pub struct Configuration {
     /// If `true`, log request/response details to stderr.
     pub debug: bool,
     /// Custom `reqwest::Client` (optional - one is created automatically).
+    /// Only available with the `default-executor` feature.
+    #[cfg(feature = "default-executor")]
     pub http_client: Option<Client>,
     /// Retry configuration.
     pub retry_params: Option<RetryParams>,
@@ -47,6 +50,7 @@ impl Default for Configuration {
             default_headers: HashMap::new(),
             user_agent: DEFAULT_USER_AGENT.to_string(),
             debug: false,
+            #[cfg(feature = "default-executor")]
             http_client: None,
             retry_params: None,
             telemetry: None,

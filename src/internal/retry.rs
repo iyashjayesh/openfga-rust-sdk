@@ -2,7 +2,14 @@
 
 use std::time::Duration;
 
+#[cfg(feature = "default-executor")]
 use reqwest::header::HeaderMap;
+
+// When the bundled executor is disabled there is no reqwest, so we use a
+// minimal stub. The parse functions below return trivial values in that case.
+#[cfg(not(feature = "default-executor"))]
+#[doc(hidden)]
+pub type HeaderMap = std::collections::HashMap<String, String>;
 
 use crate::internal::constants::{DEFAULT_MAX_RETRY, DEFAULT_MIN_WAIT_MS};
 
@@ -88,6 +95,7 @@ pub fn get_time_to_wait(
 /// HTTP-date form (`Retry-After: Wed, 21 Oct 2015 07:28:00 GMT`).
 ///
 /// Returns `None` if the header is absent or unparseable.
+#[cfg(feature = "default-executor")]
 pub fn parse_retry_after_header(headers: &HeaderMap) -> Option<Duration> {
     let value = headers.get(RETRY_AFTER_HEADER)?.to_str().ok()?;
 
@@ -107,6 +115,13 @@ pub fn parse_retry_after_header(headers: &HeaderMap) -> Option<Duration> {
         }
     }
 
+    None
+}
+
+/// Stub when `default-executor` is disabled — no headers to parse.
+#[cfg(not(feature = "default-executor"))]
+#[allow(unused_variables)]
+pub fn parse_retry_after_header(_headers: &HeaderMap) -> Option<Duration> {
     None
 }
 
