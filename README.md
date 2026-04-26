@@ -4,6 +4,7 @@
 [![docs.rs](https://docs.rs/openfga-sdk/badge.svg)](https://docs.rs/openfga-sdk)
 [![CI](https://github.com/openfga/rust-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/openfga/rust-sdk/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+![Visitors](https://api.visitorbadge.io/api/visitors?path=iyashjayesh%2Fopenfga-rust-sdk&countColor=%23263759&style=flat)
 
 The Rust SDK for [OpenFGA](https://openfga.dev) - an open-source Fine-Grained Authorization system inspired by Google Zanzibar.
 
